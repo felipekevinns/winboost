@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WinBoost</title>
+<style>
+:root{
+  --bg:#0c0f14; --side:#0f131a; --surface:#141922; --surface2:#1a212c; --surface3:#212a37;
+  --border:#232c3a; --border2:#2d3848; --text:#e8edf4; --muted:#8a97a8; --dim:#5f6b7c;
+  --accent:#10b981; --accent2:#06b6d4; --accentSoft:rgba(16,185,129,.12);
+  --amber:#f59e0b; --amberSoft:rgba(245,158,11,.12); --red:#ef4444; --redSoft:rgba(239,68,68,.12);
+  --blue:#60a5fa; --blueSoft:rgba(96,165,250,.12);
+  --grad:linear-gradient(135deg,var(--accent),var(--accent2));
+  --r:14px; --shadow:0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);
+  font-family:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;font-size:14px;
+  -webkit-font-smoothing:antialiased;overflow:hidden;user-select:none}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+input{font:inherit;color:inherit}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#273142;border-radius:10px;border:2px solid var(--bg)}
+::-webkit-scrollbar-track{background:transparent}
+
+.app{display:grid;grid-template-columns:250px 1fr;height:100vh;overflow:hidden}
+
+/* ---------- Sidebar ---------- */
+.side{background:var(--side);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:18px 12px}
+.brand{display:flex;align-items:center;gap:12px;padding:4px 10px 22px}
+.logo{width:40px;height:40px;border-radius:12px;background:var(--grad);display:grid;place-items:center;
+  box-shadow:0 6px 18px rgba(16,185,129,.35)}
+.logo svg{width:22px;height:22px;stroke:#04130d;fill:#04130d}
+.brand b{display:block;font-size:15px;letter-spacing:.2px}
+.brand span{font-size:12px;color:var(--muted)}
+.nav{display:flex;flex-direction:column;gap:3px;flex:1;overflow:auto}
+.nav .sep{height:1px;background:var(--border);margin:10px 8px}
+.nav button{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:var(--muted);
+  text-align:left;transition:background .15s,color .15s;position:relative}
+.nav button:hover{background:var(--surface);color:var(--text)}
+.nav button.on{background:var(--surface2);color:var(--text)}
+.nav button.on::before{content:"";position:absolute;left:-12px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--grad)}
+.nav button.on svg{color:var(--accent)}
+.nav .lbl{flex:1}
+.nav .cnt{font-size:11px;color:var(--dim);background:var(--surface);border:1px solid var(--border);
+  padding:1px 7px;border-radius:20px;font-variant-numeric:tabular-nums}
+.nav .cnt.full{color:var(--accent);border-color:rgba(16,185,129,.35)}
+.sidefoot{padding:12px 10px 2px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--dim)}
+.badge-admin{display:inline-flex;align-items:center;gap:6px;color:var(--accent)}
+.badge-admin svg{width:14px;height:14px}
+
+/* ---------- Main ---------- */
+.main{display:flex;flex-direction:column;min-width:0;position:relative;overflow:hidden}
+.top{display:flex;align-items:center;gap:16px;padding:22px 32px 16px}
+.top h1{font-size:24px;font-weight:650;letter-spacing:-.3px}
+.top p{color:var(--muted);margin-top:3px}
+.top .grow{flex:1;min-width:0}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);
+  border-radius:11px;padding:0 12px;width:280px;height:40px;transition:border .15s}
+.search:focus-within{border-color:var(--accent)}
+.search input{background:none;border:0;outline:0;flex:1;height:100%;min-width:0}
+.search svg{color:var(--dim)}
+.content{flex:1;overflow:auto;padding:4px 32px 120px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.toolbar .sp{flex:1}
+
+.btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border-radius:10px;
+  background:var(--surface2);border:1px solid var(--border2);font-weight:550;transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--surface3)}
+.btn.primary{background:var(--grad);border:0;color:#03140e;box-shadow:0 6px 18px rgba(16,185,129,.28)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent}
+.btn.sm{height:32px;padding:0 12px;font-size:13px}
+.btn:disabled{opacity:.45;pointer-events:none}
+.btn svg{width:16px;height:16px}
+
+/* ---------- Cards ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.item{display:flex;gap:16px;align-items:flex-start;transition:border .15s,background .15s;cursor:pointer}
+.item:hover{border-color:var(--border2);background:#161c26}
+.item.pending{border-color:rgba(16,185,129,.55);background:linear-gradient(0deg,rgba(16,185,129,.05),rgba(16,185,129,.05)),var(--surface)}
+.item.na{opacity:.45;cursor:default}
+.item .body{flex:1;min-width:0}
+.item h3{font-size:14.5px;font-weight:600;margin-bottom:6px}
+.item p{color:var(--muted);line-height:1.5;font-size:13px}
+.item .warn{display:flex;gap:7px;align-items:flex-start;margin-top:9px;color:#fbbf24;font-size:12.5px;line-height:1.45}
+.item .warn svg{width:15px;height:15px;margin-top:1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px;letter-spacing:.2px;white-space:nowrap}
+.chip svg{width:11px;height:11px}
+.chip.rec{background:var(--accentSoft);color:#34d399}
+.chip.safe{background:rgba(148,163,184,.1);color:#a7b3c2}
+.chip.moderate{background:var(--amberSoft);color:#fbbf24}
+.chip.advanced{background:var(--redSoft);color:#fca5a5}
+.chip.reboot{background:var(--blueSoft);color:#93c5fd}
+.chip.state{background:rgba(16,185,129,.16);color:#6ee7b7}
+.chip.pend{background:var(--grad);color:#03140e}
+.chip.dur{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+
+/* switch */
+.sw{width:46px;height:26px;border-radius:30px;background:#2a3445;position:relative;flex:none;transition:background .2s;margin-top:2px}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#cbd5e1;
+  transition:transform .22s cubic-bezier(.3,1.4,.5,1),background .2s;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.sw.on{background:var(--grad)}
+.sw.on::after{transform:translateX(20px);background:#fff}
+/* checkbox */
+.ck{width:22px;height:22px;border-radius:7px;border:2px solid #3a4658;flex:none;display:grid;place-items:center;margin-top:1px;transition:all .15s}
+.ck svg{width:14px;height:14px;stroke:#03140e;stroke-width:3;opacity:0;transform:scale(.6);transition:all .15s}
+.ck.on{background:var(--grad);border-color:transparent}
+.ck.on svg{opacity:1;transform:none}
+.item.sel{border-color:rgba(16,185,129,.55)}
+
+/* ---------- Dashboard ---------- */
+.dash{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.hero{grid-column:span 12;display:flex;align-items:center;gap:28px;padding:24px 28px;
+  background:radial-gradient(1200px 300px at 0% 0%,rgba(16,185,129,.16),transparent 60%),
+  radial-gradient(800px 260px at 100% 100%,rgba(6,182,212,.12),transparent 60%),var(--surface)}
+.hero h2{font-size:22px;font-weight:650;letter-spacing:-.2px}
+.hero p{color:var(--muted);margin:6px 0 16px;line-height:1.5;max-width:620px}
+.hero .acts{display:flex;gap:10px;flex-wrap:wrap}
+.score{position:relative;width:132px;height:132px;flex:none}
+.score svg{width:132px;height:132px;transform:rotate(-90deg)}
+.score .v{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.score .v b{font-size:30px;font-weight:700;display:block;line-height:1}
+.score .v span{font-size:11px;color:var(--muted);margin-top:4px;display:block}
+.gauge{grid-column:span 4;display:flex;align-items:center;gap:18px}
+.ring{position:relative;width:86px;height:86px;flex:none}
+.ring svg{width:86px;height:86px;transform:rotate(-90deg)}
+.ring circle{transition:stroke-dashoffset .6s ease,stroke .4s}
+.ring .v{position:absolute;inset:0;display:grid;place-items:center;font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}
+.gauge h4{font-size:13px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.gauge h4 svg{width:15px;height:15px}
+.gauge .big{font-size:15px;font-weight:600}
+.gauge .sub{color:var(--dim);font-size:12.5px;margin-top:3px}
+.spark{display:block;margin-top:8px;width:100%;height:28px}
+.info{grid-column:span 5}
+.procs{grid-column:span 7}
+.card h3.t{font-size:12px;color:var(--muted);font-weight:650;text-transform:uppercase;letter-spacing:.7px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card h3.t svg{width:15px;height:15px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:11px 18px;font-size:13.5px}
+.kv dt{color:var(--muted)}
+.kv dd{text-align:right;font-weight:550;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar{height:6px;border-radius:6px;background:#232c3a;overflow:hidden;margin-top:12px}
+.bar i{display:block;height:100%;background:var(--grad);border-radius:6px;transition:width .5s}
+table.pt{width:100%;border-collapse:collapse;font-size:13.5px;table-layout:fixed}
+.pt th{text-align:left;color:var(--dim);font-weight:600;font-size:12px;padding:0 0 10px}
+.pt td{padding:7px 0;border-top:1px solid var(--border)}
+.pt td.n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:12px}
+.pt td.n small{color:var(--dim);margin-left:6px}
+.pt .cpu div{display:flex;align-items:center;gap:10px}
+.pt .cpu .bar{flex:1;margin:0}
+.pt .cpu span{width:46px;text-align:right;font-variant-numeric:tabular-nums}
+.pt .mem{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.tip{grid-column:span 12;display:flex;gap:14px;align-items:center;background:var(--blueSoft);border:1px solid rgba(96,165,250,.25);color:#cfe1ff;padding:14px 18px}
+.tip svg{color:var(--blue);width:22px;height:22px}
+.tip .grow{flex:1;line-height:1.5}
+
+/* tools */
+.tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.tool{display:flex;gap:14px;align-items:center;text-align:left;cursor:pointer;transition:all .15s}
+.tool:hover{border-color:var(--border2);transform:translateY(-1px);background:#161c26}
+.tool .ic{width:42px;height:42px;border-radius:11px;background:var(--surface2);display:grid;place-items:center;color:var(--accent);flex:none}
+.tool b{display:block;font-weight:600;margin-bottom:3px}
+.tool span{font-size:12.5px;color:var(--muted)}
+.protect{margin-top:18px;display:flex;gap:14px;align-items:flex-start;border-color:rgba(16,185,129,.3)}
+.protect > svg{color:var(--accent);width:22px;height:22px;margin-top:2px}
+.protect p{color:var(--muted);line-height:1.6;margin-top:4px}
+.section-title{font-size:12px;color:var(--muted);font-weight:650;text-transform:uppercase;letter-spacing:.7px;margin:18px 0 10px}
+.empty{color:var(--muted);text-align:center;padding:60px 0}
+
+/* ---------- Pending bar ---------- */
+.pbar{position:absolute;left:32px;right:32px;bottom:20px;display:flex;align-items:center;gap:16px;
+  padding:12px 12px 12px 20px;border-radius:16px;background:rgba(26,33,44,.94);backdrop-filter:blur(14px);
+  border:1px solid var(--border2);box-shadow:var(--shadow);transform:translateY(160%);transition:transform .35s cubic-bezier(.2,1,.3,1),opacity .25s}
+.pbar:not(.show){opacity:0;pointer-events:none}
+.pbar.show{transform:none}
+.pbar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(16,185,129,.2);flex:none}
+.pbar .txt{flex:1;min-width:0}
+.pbar .txt b{font-size:14.5px}
+.pbar .txt small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.opt{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:13px;cursor:pointer;white-space:nowrap}
+.opt .ck{width:19px;height:19px;border-radius:6px}
+.opt .ck svg{width:12px;height:12px}
+
+/* ---------- Modal ---------- */
+.ov{position:fixed;inset:0;background:rgba(5,8,12,.66);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:50;padding:30px}
+.ov.show{display:flex;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.modal{width:min(720px,100%);max-height:100%;display:flex;flex-direction:column;background:var(--surface);
+  border:1px solid var(--border2);border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.6);animation:pop .25s cubic-bezier(.2,1.2,.4,1)}
+@keyframes pop{from{transform:scale(.96);opacity:0}}
+.mh{padding:22px 24px 14px;display:flex;gap:14px;align-items:center}
+.mh .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--accentSoft);color:var(--accent);flex:none}
+.mh h2{font-size:18px;font-weight:650}
+.mh p{color:var(--muted);font-size:13px;margin-top:3px}
+.mb{padding:4px 24px 8px;overflow:auto}
+.mf{padding:16px 24px 20px;display:flex;gap:10px;justify-content:flex-end;align-items:center;border-top:1px solid var(--border);margin-top:10px}
+.mf .sp{flex:1}
+.clist{display:flex;flex-direction:column;gap:6px;margin:0 0 6px}
+.clist div{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface2);border-radius:9px;font-size:13.5px}
+.clist svg{width:15px;height:15px}
+.clist .on svg{color:var(--accent)}
+.clist .off svg{color:var(--amber)}
+.clist .ttl{flex:1}
+.mwarn{display:flex;gap:10px;padding:12px 14px;border-radius:10px;background:var(--amberSoft);color:#fde68a;font-size:13px;line-height:1.5;margin-top:8px}
+.mwarn svg{color:var(--amber);flex:none;margin-top:1px}
+.mwarn.minfo{background:var(--blueSoft);color:#cfe1ff}
+.mwarn.minfo svg{color:var(--blue)}
+
+/* progress */
+.prog{height:8px;border-radius:8px;background:#232c3a;overflow:hidden;margin:4px 0 12px}
+.prog i{display:block;height:100%;width:0;background:var(--grad);transition:width .4s;border-radius:8px}
+.prog.ind i{width:30%;animation:ind 1.3s infinite ease-in-out}
+@keyframes ind{0%{transform:translateX(-100%)}100%{transform:translateX(340%)}}
+.stepline{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-bottom:8px;gap:16px}
+.stepline b{color:var(--text);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.console{background:#080a0e;border:1px solid var(--border);border-radius:12px;padding:12px 14px;height:300px;overflow:auto;
+  font-family:"Cascadia Mono","Cascadia Code",Consolas,monospace;font-size:12.5px;line-height:1.6;user-select:text}
+.console div{white-space:pre-wrap;word-break:break-word}
+.console .out{color:#9aa7b8}
+.console .info{color:#93c5fd}
+.console .ok{color:#34d399}
+.console .ok::before{content:"✔ "}
+.console .warn{color:#fbbf24}
+.console .error{color:#f87171}
+.console .head{color:#fff;font-weight:700;margin-top:8px}
+.console .head::before{content:"▸ ";color:var(--accent)}
+.result{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.result div{flex:1;min-width:120px;background:var(--surface2);border-radius:11px;padding:12px 14px}
+.result b{font-size:20px;display:block}
+.result span{color:var(--muted);font-size:12px}
+.spin{width:20px;height:20px;border-radius:50%;border:2.5px solid rgba(16,185,129,.25);border-top-color:var(--accent);animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* toast */
+.toasts{position:fixed;right:24px;top:20px;display:flex;flex-direction:column;gap:8px;z-index:80}
+.toast{background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:12px 16px;box-shadow:var(--shadow);
+  display:flex;gap:10px;align-items:center;animation:tin .3s cubic-bezier(.2,1,.3,1);max-width:380px}
+.toast svg{color:var(--accent)}
+@keyframes tin{from{transform:translateX(30px);opacity:0}}
+.fadein{animation:fu .3s ease}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}}
+
+@media (max-width:1150px){.info,.procs{grid-column:span 12}}
+@media (max-width:900px){.gauge{grid-column:span 12}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="logo"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+      <div><b>WinBoost</b><span>Otimizador de PC</span></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidefoot">
+      <span class="badge-admin" id="adminBadge"></span>
+      <span id="verTxt"></span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="top">
+      <div class="grow"><h1 id="pgTitle">Início</h1><p id="pgSub"></p></div>
+      <label class="search"><span data-i="search"></span><input id="q" placeholder="Buscar otimização…" autocomplete="off" spellcheck="false"></label>
+    </header>
+    <section class="content" id="content"></section>
+
+    <div class="pbar" id="pbar">
+      <span class="dot"></span>
+      <div class="txt"><b id="pbCount"></b><small id="pbList"></small></div>
+      <label class="opt" id="optRestore"><span class="ck on"><span data-i="check"></span></span>Criar ponto de restauração</label>
+      <button class="btn ghost" id="btnDiscard">Descartar</button>
+      <button class="btn primary" id="btnApply"><span data-i="check"></span>Aplicar alterações</button>
+    </div>
+  </main>
+</div>
+
+<div class="ov" id="ov"><div class="modal" id="modal"></div></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+"use strict";
+/* ======================= Ícones ======================= */
+const ICONS = {
+  home:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  bolt:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  layers:'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  layout:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>',
+  trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+  wrench:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
+  search:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  check:'<polyline points="20 6 9 17 4 12"/>',
+  alert:'<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  restart:'<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>',
+  star:'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+  cpu:'<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/>',
+  memory:'<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10v4M10 10v4M14 10v4M18 10v4"/>',
+  disk:'<line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  info:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
+  activity:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+  play:'<polygon points="6 3 20 12 6 21 6 3"/>',
+  rocket:'<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>',
+  package:'<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/>',
+  refresh:'<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>',
+  sparkles:'<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>',
+  file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+  folder:'<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+  lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  monitor:'<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>',
+  power:'<path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>',
+  undo:'<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>',
+};
+const ic = (n, cls='i') => `<svg viewBox="0 0 24 24" class="${cls}">${ICONS[n]||''}</svg>`;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+document.querySelectorAll('[data-i]').forEach(e => e.outerHTML = ic(e.dataset.i));
+
+/* ======================= Estado ======================= */
+const S = {
+  page:'home', cats:[], items:[], byId:{}, desired:{}, selected:new Set(),
+  sys:null, live:null, running:false, doneShown:false, restore:true, query:'', hist:{cpu:[],ram:[],disk:[]}
+};
+const RISK = {safe:'Seguro', moderate:'Moderado', advanced:'Avançado'};
+const TOOLS = [
+  ['startup','Apps na inicialização','Escolha o que abre com o Windows','rocket'],
+  ['apps','Programas instalados','Desinstalar e gerenciar programas','package'],
+  ['taskmgr','Gerenciador de Tarefas','Processos e desempenho','activity'],
+  ['resmon','Monitor de Recursos','Veja quem está usando o disco','disk'],
+  ['services','Serviços','Lista completa de serviços','layers'],
+  ['storage','Armazenamento','Espaço em disco e Sensor','trash'],
+  ['update','Windows Update','Verificar atualizações','refresh'],
+  ['perfopts','Opções de desempenho','Efeitos visuais e memória virtual','sparkles'],
+  ['restore','Restaurar o sistema','Voltar a um ponto de restauração','undo'],
+  ['defrag','Otimizar unidades','TRIM e desfragmentação','disk'],
+  ['cleanmgr','Limpeza de Disco','Ferramenta clássica do Windows','trash'],
+  ['security','Segurança do Windows','Antivírus e proteção','shield'],
+  ['msinfo','Informações do sistema','Hardware e drivers','info'],
+  ['eventvwr','Visualizador de Eventos','Erros e avisos do sistema','file'],
+  ['logs','Logs e backup','Histórico do que foi alterado','folder'],
+];
+
+const isOn = it => it.state === 1;
+const pendingList = () => S.items.filter(it => it.kind==='toggle' && it.state !== -1 && S.desired[it.id] !== isOn(it));
+
+/* ======================= Backend ======================= */
+const API = {
+  call(name, ...a){ if (typeof window[name] !== 'function') return Promise.reject('backend indisponível'); return window[name](...a); }
+};
+
+async function loadCatalog(){
+  const c = await API.call('getCatalog');
+  S.cats = c.categories; S.items = c.items; S.byId = {}; S.desired = {};
+  for (const it of S.items){
+    S.byId[it.id] = it;
+    if (it.kind === 'toggle') S.desired[it.id] = isOn(it);
+  }
+}
+
+/* ======================= Navegação ======================= */
+function navHTML(){
+  const counts = c => {
+    const its = S.items.filter(i => i.cat===c.id && i.kind==='toggle' && i.state!==-1);
+    if (!its.length) return '';
+    const on = its.filter(isOn).length;
+    return `<span class="cnt ${on===its.length?'full':''}">${on}/${its.length}</span>`;
+  };
+  let h = `<button data-p="home" class="${S.page==='home'?'on':''}">${ic('home')}<span class="lbl">Início</span></button><div class="sep"></div>`;
+  for (const c of S.cats) h += `<button data-p="${c.id}" class="${S.page===c.id?'on':''}">${ic(c.icon)}<span class="lbl">${esc(c.title)}</span>${c.kind==='toggle'?counts(c):''}</button>`;
+  h += `<div class="sep"></div><button data-p="tools" class="${S.page==='tools'?'on':''}">${ic('grid')}<span class="lbl">Ferramentas</span></button>`;
+  $('#nav').innerHTML = h;
+}
+$('#nav').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (b) go(b.dataset.p); });
+
+function go(p){ S.page = p; S.query=''; $('#q').value=''; render(); $('#content').scrollTop = 0; }
+
+function render(){
+  navHTML();
+  const c = $('#content');
+  if (S.query){
+    setHeader('Resultados da busca', `“${S.query}”`);
+    const q = norm(S.query);
+    const its = S.items.filter(i => norm(i.title+' '+i.desc).includes(q));
+    c.innerHTML = its.length ? `<div class="grid fadein">${its.map(itemHTML).join('')}</div>` : `<div class="empty">Nada encontrado.</div>`;
+  } else if (S.page==='home') renderHome();
+  else if (S.page==='tools') renderTools();
+  else renderCat(S.cats.find(x => x.id===S.page));
+  updatePending();
+}
+const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+function setHeader(t, s){ $('#pgTitle').textContent = t; $('#pgSub').textContent = s||''; }
+
+/* ======================= Itens ======================= */
+function chipsHTML(it){
+  let h = '';
+  if (it.kind==='toggle' && it.state!==-1 && S.desired[it.id]!==isOn(it)) h += `<span class="chip pend">${S.desired[it.id]?'Será ativado':'Será revertido'}</span>`;
+  else if (it.kind==='toggle' && isOn(it)) h += `<span class="chip state">${ic('check')}Ativo</span>`;
+  if (it.rec) h += `<span class="chip rec">${ic('star')}Recomendado</span>`;
+  h += `<span class="chip ${it.risk}">${RISK[it.risk]}</span>`;
+  if (it.reboot) h += `<span class="chip reboot">${ic('restart')}Reiniciar</span>`;
+  if (it.dur) h += `<span class="chip dur">${ic('clock')}${esc(it.dur)}</span>`;
+  return h;
+}
+function itemHTML(it){
+  const na = it.state===-1;
+  let ctrl, cls = 'card item';
+  if (it.kind==='toggle'){
+    const on = S.desired[it.id];
+    if (!na && on!==isOn(it)) cls += ' pending';
+    ctrl = `<div class="sw ${on?'on':''}"></div>`;
+  } else {
+    const on = S.selected.has(it.id);
+    if (on) cls += ' sel';
+    ctrl = `<div class="ck ${on?'on':''}">${ic('check')}</div>`;
+  }
+  if (na) cls += ' na';
+  return `<div class="${cls}" data-id="${it.id}">
+    ${it.kind==='action'?ctrl:''}
+    <div class="body">
+      <h3>${esc(it.title)}</h3>
+      <div class="chips" style="margin-bottom:8px">${na?'<span class="chip safe">Não disponível neste PC</span>':chipsHTML(it)}</div>
+      <p>${esc(it.desc)}</p>
+      ${it.warn?`<div class="warn">${ic('alert')}<span>${esc(it.warn)}</span></div>`:''}
+    </div>
+    ${it.kind==='toggle'?ctrl:''}
+  </div>`;
+}
+$('#content').addEventListener('click', e => {
+  const a = e.target.closest('[data-act]');
+  if (a){ actions[a.dataset.act]?.(a.dataset); return; }
+  const card = e.target.closest('.item[data-id]');
+  if (card){
+    const it = S.byId[card.dataset.id];
+    if (!it || it.state===-1) return;
+    if (it.kind==='toggle') setDesired(it, !S.desired[it.id]);
+    else { S.selected.has(it.id) ? S.selected.delete(it.id) : S.selected.add(it.id); }
+    rerender();
+  }
+});
+function setDesired(it, v){
+  S.desired[it.id] = v;
+  if (v && it.group) for (const o of S.items) if (o.group===it.group && o.id!==it.id) S.desired[o.id] = false;
+}
+function rerender(){
+  const st = $('#content').scrollTop;
+  render();
+  $('#content').scrollTop = st;
+  document.querySelectorAll('#content .fadein').forEach(e => e.classList.remove('fadein'));
+}
+
+/* ======================= Páginas ======================= */
+function renderCat(cat){
+  if (!cat){ S.page='home'; return renderHome(); }
+  setHeader(cat.title, cat.sub);
+  const its = S.items.filter(i => i.cat===cat.id);
+  let tb;
+  if (cat.kind==='toggle'){
+    tb = `<button class="btn sm" data-act="catRec" data-cat="${cat.id}">${ic('star')}Marcar recomendados</button>
+      <button class="btn sm" data-act="catAll" data-cat="${cat.id}">Ativar todos</button>
+      <button class="btn sm ghost" data-act="catNone" data-cat="${cat.id}">${ic('undo')}Reverter todos</button>`;
+  } else {
+    const n = its.filter(i => S.selected.has(i.id)).length;
+    tb = `<button class="btn sm" data-act="selRec" data-cat="${cat.id}">${ic('star')}Selecionar recomendados</button>
+      <button class="btn sm ghost" data-act="selNone" data-cat="${cat.id}">Limpar seleção</button>
+      <span class="sp"></span>
+      <button class="btn primary" data-act="runSel" data-cat="${cat.id}" ${n?'':'disabled'}>${ic('play')}Executar selecionados${n?` (${n})`:''}</button>`;
+  }
+  $('#content').innerHTML = `<div class="toolbar">${tb}</div><div class="grid fadein">${its.map(itemHTML).join('')}</div>`;
+}
+
+function renderTools(){
+  setHeader('Ferramentas', 'Atalhos para as ferramentas do Windows');
+  $('#content').innerHTML = `<div class="tools fadein">${TOOLS.map(t => `
+    <button class="card tool" data-act="tool" data-t="${t[0]}"><span class="ic">${ic(t[3])}</span><span><b>${t[1]}</b><span>${t[2]}</span></span></button>`).join('')}
+  </div>
+  <div class="card protect">${ic('lock')}<div><b>Itens que este programa nunca altera</b>
+  <p>Windows Defender, Windows Update, drivers, antivírus, VPNs e softwares de gestão corporativa (Acronis, NinjaRMM, Tailscale e similares).
+  Antes de cada mudança os valores originais são salvos, então tudo pode ser revertido com segurança.</p></div></div>`;
+}
+
+function ringSVG(pct, size, stroke, color){
+  const r = (size-stroke)/2, c = 2*Math.PI*r, off = c*(1-pct/100);
+  return `<svg viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#232c3a" stroke-width="${stroke}"/>
+  <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}"/></svg>`;
+}
+const loadColor = v => v<60 ? '#10b981' : v<85 ? '#f59e0b' : '#ef4444';
+function fmtUptime(s){ const d=Math.floor(s/86400), h=Math.floor(s%86400/3600), m=Math.floor(s%3600/60); return d?`${d}d ${h}h`:h?`${h}h ${m}min`:`${m} min`; }
+
+function healthScore(){
+  const rec = S.items.filter(i => i.kind==='toggle' && i.rec && i.state!==-1);
+  const on = rec.filter(isOn).length;
+  return {pct: rec.length ? Math.round(on*100/rec.length) : 0, on, total: rec.length};
+}
+
+function renderHome(){
+  const sy = S.sys || {};
+  setHeader('Início', sy.computer ? `${sy.computer} · ${sy.os||''}` : '');
+  const hs = healthScore();
+  const scoreColor = hs.pct>=80 ? '#10b981' : hs.pct>=40 ? '#f59e0b' : '#ef4444';
+  const msg = hs.pct>=100 ? 'Todas as otimizações recomendadas estão ativas. Seu Windows está bem configurado.'
+    : `${hs.total-hs.on} de ${hs.total} otimizações recomendadas ainda não estão ativas. Aplique tudo com um clique ou escolha uma a uma nas categorias ao lado.`;
+  const diskUsed = sy.diskTotalGB ? (1 - sy.diskFreeGB/sy.diskTotalGB)*100 : 0;
+  const longUp = sy.uptimeSec > 3*86400;
+  $('#content').innerHTML = `<div class="dash fadein">
+    <div class="card hero">
+      <div class="score">${ringSVG(hs.pct,132,12,scoreColor)}<div class="v"><div><b>${hs.pct}%</b><span>otimizado</span></div></div></div>
+      <div style="flex:1;min-width:0">
+        <h2>Olá${sy.user?', '+esc(sy.user):''}!</h2>
+        <p>${msg}</p>
+        <div class="acts">
+          <button class="btn primary" data-act="presetRec">${ic('sparkles')}Aplicar recomendadas</button>
+          <button class="btn" data-act="goClean">${ic('trash')}Limpeza rápida</button>
+          <button class="btn ghost" data-act="presetDefault">${ic('undo')}Restaurar padrão do Windows</button>
+        </div>
+      </div>
+    </div>
+    ${longUp?`<div class="card tip">${ic('info')}<div class="grow"><b>O PC está ligado há ${fmtUptime(sy.uptimeSec)}.</b> Reiniciar de vez em quando libera memória e conclui atualizações pendentes.</div></div>`:''}
+    ${gaugeHTML('cpu','Processador','cpu')}
+    ${gaugeHTML('ram','Memória','memory')}
+    ${gaugeHTML('disk','Disco (tempo ativo)','disk')}
+    <div class="card info"><h3 class="t">${ic('monitor')}Seu computador</h3>
+      <dl class="kv">
+        <dt>Processador</dt><dd title="${esc(sy.cpu)}">${esc(sy.cpu||'—')}</dd>
+        <dt>Threads</dt><dd>${sy.threads||'—'}</dd>
+        <dt>Memória RAM</dt><dd>${sy.ramGB?sy.ramGB.toFixed(1)+' GB':'—'}</dd>
+        <dt>Windows</dt><dd>${esc(sy.os||'—')} <span style="color:var(--dim)">(${esc(sy.build||'')})</span></dd>
+        <dt>Plano de energia</dt><dd>${esc(sy.plan||'—')}</dd>
+        <dt>Ligado há</dt><dd>${sy.uptimeSec?fmtUptime(sy.uptimeSec):'—'}</dd>
+        <dt>Disco C:</dt><dd>${sy.diskTotalGB?`${sy.diskFreeGB.toFixed(0)} GB livres de ${sy.diskTotalGB.toFixed(0)} GB`:'—'}</dd>
+      </dl>
+      <div class="bar"><i style="width:${diskUsed.toFixed(0)}%"></i></div>
+    </div>
+    <div class="card procs"><h3 class="t">${ic('activity')}O que está pesando agora</h3><div id="procs"><div class="empty" style="padding:20px">Medindo…</div></div></div>
+  </div>`;
+  updateLive();
+}
+function gaugeHTML(k, title, icon){
+  return `<div class="card gauge" id="g-${k}"><div class="ring">${ringSVG(0,86,9,'#10b981')}<div class="v">–</div></div>
+    <div style="flex:1;min-width:0"><h4>${ic(icon)}${title}</h4><div class="big">–</div><div class="sub">&nbsp;</div><svg class="spark" preserveAspectRatio="none" viewBox="0 0 100 28"></svg></div></div>`;
+}
+function sparkPath(arr){
+  if (arr.length<2) return '';
+  const n = 30, step = 100/(n-1), pts = arr.slice(-n);
+  const off = n - pts.length;
+  const d = pts.map((v,i) => `${((i+off)*step).toFixed(1)},${(27-v*0.26).toFixed(1)}`).join(' L');
+  const x0 = (off*step).toFixed(1);
+  return `<path d="M${d} L100,28 L${x0},28 Z" fill="rgba(16,185,129,.12)"/><path d="M${d}" fill="none" stroke="#10b981" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
+}
+function setGauge(k, v, big, sub){
+  const g = document.getElementById('g-'+k); if (!g) return;
+  const col = loadColor(v), r = (86-9)/2, c = 2*Math.PI*r;
+  const circ = g.querySelectorAll('.ring circle')[1];
+  circ.style.strokeDashoffset = c*(1-v/100); circ.style.stroke = col;
+  g.querySelector('.ring .v').textContent = Math.round(v)+'%';
+  g.querySelector('.big').textContent = big;
+  g.querySelector('.sub').innerHTML = sub;
+  g.querySelector('.spark').innerHTML = sparkPath(S.hist[k]);
+}
+function updateLive(){
+  const l = S.live, sy = S.sys || {};
+  if (!l || S.page!=='home' || S.query) return;
+  setGauge('cpu', l.cpu, l.cpu>85?'Muito alto':l.cpu>60?'Alto':'Normal', `${sy.threads||'?'} threads`);
+  setGauge('ram', l.ram, `${l.ramUsedGB.toFixed(1)} de ${(sy.ramGB||0).toFixed(1)} GB`, l.ram>85?'Pouca memória livre':'Em uso');
+  setGauge('disk', l.diskOk?l.disk:0, l.diskOk?(l.disk>85?'Muito alto':l.disk>60?'Alto':'Normal'):'Indisponível', 'Atividade do disco');
+  const p = document.getElementById('procs');
+  if (p && l.procs?.length){
+    p.innerHTML = `<table class="pt"><colgroup><col style="width:45%"><col><col style="width:90px"></colgroup>
+      <tr><th>Programa</th><th>CPU</th><th style="text-align:right">Memória</th></tr>${
+      l.procs.map(x => `<tr><td class="n" title="${esc(x.name)}">${esc(x.name)}${x.count>1?`<small>×${x.count}</small>`:''}</td>
+      <td class="cpu"><div><div class="bar"><i style="width:${Math.min(100,x.cpu).toFixed(0)}%;${x.cpu>50?'background:linear-gradient(90deg,#f59e0b,#ef4444)':''}"></i></div><span>${x.cpu.toFixed(1)}%</span></div></td>
+      <td class="mem">${x.memMB>=1024?(x.memMB/1024).toFixed(2)+' GB':x.memMB.toFixed(0)+' MB'}</td></tr>`).join('')}</table>`;
+  }
+}
+async function pollLive(){
+  try{
+    const l = await API.call('getLiveStats');
+    S.live = l;
+    for (const k of ['cpu','ram','disk']){ S.hist[k].push(k==='disk'&&!l.diskOk?0:l[k]); if (S.hist[k].length>60) S.hist[k].shift(); }
+    updateLive();
+  }catch(e){}
+  setTimeout(pollLive, 1500);
+}
+
+/* ======================= Ações ======================= */
+const actions = {
+  tool: d => { API.call('openTool', d.t).then(() => toast('Abrindo…')).catch(e => toast('Erro: '+e)); },
+  catRec: d => { S.items.filter(i => i.cat===d.cat && i.kind==='toggle' && i.rec && i.state!==-1).forEach(i => setDesired(i,true)); rerender(); },
+  catAll: d => { S.items.filter(i => i.cat===d.cat && i.kind==='toggle' && i.state!==-1 && !i.group).forEach(i => setDesired(i,true)); rerender(); },
+  catNone: d => { S.items.filter(i => i.cat===d.cat && i.kind==='toggle').forEach(i => S.desired[i.id]=false); rerender(); },
+  selRec: d => { S.items.filter(i => i.cat===d.cat && i.rec).forEach(i => S.selected.add(i.id)); rerender(); },
+  selNone: d => { S.items.filter(i => i.cat===d.cat).forEach(i => S.selected.delete(i.id)); rerender(); },
+  runSel: d => confirmRun({actions: S.items.filter(i => i.cat===d.cat && S.selected.has(i.id)).map(i=>i.id), changes:[]}),
+  presetRec: () => {
+    S.items.filter(i => i.kind==='toggle' && i.rec && i.state!==-1).forEach(i => setDesired(i,true));
+    if (!pendingList().length) return toast('Todas as recomendadas já estão ativas.');
+    openApply();
+  },
+  presetDefault: () => {
+    S.items.filter(i => i.kind==='toggle').forEach(i => S.desired[i.id]=false);
+    if (!pendingList().length) return toast('Nada para reverter: tudo já está no padrão.');
+    openApply();
+  },
+  goClean: () => { S.items.filter(i => i.cat==='clean' && i.rec).forEach(i => S.selected.add(i.id)); go('clean'); },
+};
+
+/* ======================= Barra de pendências ======================= */
+function updatePending(){
+  const p = pendingList();
+  $('#pbar').classList.toggle('show', p.length>0 && !S.running);
+  if (!p.length) return;
+  $('#pbCount').textContent = `${p.length} ${p.length===1?'alteração pendente':'alterações pendentes'}`;
+  $('#pbList').textContent = p.map(i => (S.desired[i.id]?'+ ':'− ')+i.title).join('   ·   ');
+}
+$('#btnDiscard').onclick = () => { for (const i of S.items) if (i.kind==='toggle') S.desired[i.id]=isOn(i); rerender(); };
+$('#btnApply').onclick = () => openApply();
+$('#optRestore').onclick = e => { e.preventDefault(); S.restore=!S.restore; $('#optRestore .ck').classList.toggle('on',S.restore); };
+
+function openApply(){
+  rerender();
+  confirmRun({changes: pendingList().map(i => ({id:i.id, on:S.desired[i.id]})), actions:[]});
+}
+
+/* ======================= Modais ======================= */
+function showModal(html){ $('#modal').innerHTML = html; $('#ov').classList.add('show'); }
+function closeModal(){ if (S.running) return; S.doneShown=false; $('#ov').classList.remove('show'); }
+$('#ov').addEventListener('click', e => { if (e.target.id==='ov' && !S.running && !S.doneShown) closeModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') closeModal();
+  const k = e.key.toLowerCase();
+  if (e.key==='F5' || ((e.ctrlKey||e.metaKey) && (k==='r' || k==='p' || k==='u' || k==='s'))) e.preventDefault();
+});
+
+function confirmRun(req){
+  const on = req.changes.filter(c => c.on).map(c => S.byId[c.id]);
+  const off = req.changes.filter(c => !c.on).map(c => S.byId[c.id]);
+  const acts = req.actions.map(id => S.byId[id]);
+  const all = [...on, ...off, ...acts];
+  if (!all.length) return;
+  const warns = [...on, ...acts].filter(i => i.warn);
+  const reboot = all.some(i => i.reboot);
+  const longOnes = acts.filter(i => /min/.test(i.dur||'') && !/^</.test(i.dur||''));
+  const isActions = acts.length && !req.changes.length;
+  const list = (arr, cls, icon) => arr.map(i => `<div class="${cls}">${ic(icon)}<span class="ttl">${esc(i.title)}</span><span class="chip ${i.risk}">${RISK[i.risk]}</span></div>`).join('');
+  showModal(`
+    <div class="mh"><div class="ic">${ic(isActions?'play':'check')}</div><div><h2>${isActions?'Executar tarefas':'Confirmar alterações'}</h2>
+    <p>${all.length} ${all.length===1?'item':'itens'}${isActions?'':' · tudo pode ser revertido depois'}</p></div></div>
+    <div class="mb">
+      ${on.length?`<div class="section-title" style="margin-top:0">Ativar (${on.length})</div><div class="clist">${list(on,'on','check')}</div>`:''}
+      ${off.length?`<div class="section-title">Reverter ao padrão (${off.length})</div><div class="clist">${list(off,'off','undo')}</div>`:''}
+      ${acts.length?`<div class="section-title" style="margin-top:0">Tarefas (${acts.length})</div><div class="clist">${list(acts,'on','play')}</div>`:''}
+      ${warns.map(w => `<div class="mwarn">${ic('alert')}<div><b>${esc(w.title)}:</b> ${esc(w.warn)}</div></div>`).join('')}
+      ${longOnes.length?`<div class="mwarn minfo">${ic('clock')}<div>Algumas tarefas levam vários minutos e usam bastante CPU e disco. Dá para continuar usando o PC, mas ele ficará mais lento enquanto isso.</div></div>`:''}
+      ${reboot?`<div class="mwarn minfo">${ic('restart')}<div>Algumas mudanças só têm efeito completo depois de reiniciar o computador.</div></div>`:''}
+    </div>
+    <div class="mf">
+      ${req.changes.length?`<label class="opt" id="mRestore"><span class="ck ${S.restore?'on':''}">${ic('check')}</span>Criar ponto de restauração antes</label>`:''}
+      <span class="sp"></span>
+      <button class="btn ghost" id="mCancel">Cancelar</button>
+      <button class="btn primary" id="mOk">${ic(isActions?'play':'check')}${isActions?'Executar':'Aplicar'}</button>
+    </div>`);
+  $('#mCancel').onclick = closeModal;
+  const mr = $('#mRestore');
+  if (mr) mr.onclick = e => { e.preventDefault(); S.restore=!S.restore; mr.querySelector('.ck').classList.toggle('on',S.restore); $('#optRestore .ck').classList.toggle('on',S.restore); };
+  $('#mOk').onclick = () => runJob({changes:req.changes, actions:req.actions, restorePoint: req.changes.length>0 && S.restore});
+}
+
+async function runJob(req){
+  S.running = true; S.doneShown = false; updatePending();
+  showModal(`
+    <div class="mh"><div class="ic" id="jIc"><div class="spin"></div></div><div style="flex:1;min-width:0"><h2 id="jTitle">Preparando…</h2><p id="jSub">Não feche o programa até terminar.</p></div></div>
+    <div class="mb">
+      <div id="jResult"></div>
+      <div class="stepline"><b id="jStep">Iniciando…</b><span id="jCount"></span></div>
+      <div class="prog ind" id="jProg"><i></i></div>
+      <div class="console" id="jLog"></div>
+    </div>
+    <div class="mf"><span class="sp"></span><span id="jBtns"></span><button class="btn" id="jClose" disabled>Fechar</button></div>`);
+  $('#jClose').onclick = closeModal;
+  try{ await API.call('startJob', req); }
+  catch(e){ logLine('error', String(e)); finishUI({ok:0,errors:1}); }
+}
+let lastProg = false;
+function logLine(level, text){
+  const box = $('#jLog'); if (!box) return;
+  const isProg = level==='out' && /\d+(?:[.,]\d+)?\s*%/.test(text) && text.length < 160;
+  if (isProg && lastProg && box.lastChild) box.lastChild.textContent = text;
+  else { const d = document.createElement('div'); d.className = level; d.textContent = text; box.appendChild(d); }
+  lastProg = isProg;
+  while (box.childNodes.length > 2000) box.removeChild(box.firstChild);
+  box.scrollTop = box.scrollHeight;
+}
+window.__ev = (ev, d) => {
+  if (ev==='start'){ $('#jCount').textContent = `0 de ${d.total}`; }
+  else if (ev==='step'){
+    $('#jStep').textContent = d.title; $('#jCount').textContent = `${d.index+1} de ${d.total}`;
+    const pr = $('#jProg'); pr.classList.remove('ind'); pr.querySelector('i').style.width = (d.index/d.total*100)+'%';
+    $('#jTitle').textContent = d.mode==='revert'?'Revertendo…':d.mode==='run'?'Executando tarefas…':d.mode==='restore'?'Criando ponto de restauração…':'Aplicando otimizações…';
+  }
+  else if (ev==='log') logLine(d.level, d.text);
+  else if (ev==='done') finishUI(d);
+};
+async function finishUI(d){
+  S.running = false; S.doneShown = true;
+  const pr = $('#jProg'); if (pr){ pr.classList.remove('ind'); pr.querySelector('i').style.width='100%'; }
+  const okAll = !d.errors;
+  const jic = $('#jIc');
+  jic.innerHTML = ic(okAll?'check':'alert');
+  jic.style.background = okAll?'var(--accentSoft)':'var(--amberSoft)';
+  jic.style.color = okAll?'var(--accent)':'var(--amber)';
+  $('#jTitle').textContent = okAll ? 'Concluído!' : 'Concluído com erros';
+  $('#jSub').textContent = d.reboot ? 'Reinicie o computador para aplicar tudo.' : (okAll ? 'Tudo pronto.' : 'Veja os detalhes no registro abaixo.');
+  $('#jStep').textContent = d.duration ? `Tempo total: ${d.duration}` : '';
+  $('#jCount').textContent = '';
+  $('#jResult').innerHTML = `<div class="result">
+    <div><b style="color:var(--accent)">${d.ok||0}</b><span>concluídos</span></div>
+    <div><b style="color:${d.errors?'var(--red)':'var(--muted)'}">${d.errors||0}</b><span>com erro</span></div>
+    ${d.freed?`<div><b>${esc(d.freedText)}</b><span>liberados</span></div>`:''}</div>`;
+  $('#jClose').disabled = false;
+  if (d.reboot){
+    $('#jBtns').innerHTML = `<button class="btn primary" id="jReboot">${ic('power')}Reiniciar agora</button>`;
+    $('#jReboot').onclick = async () => { try{ await API.call('rebootNow'); toast('O computador vai reiniciar em 15 segundos…'); }catch(e){ toast('Erro: '+e); } };
+  }
+  try{
+    await loadCatalog();
+    S.sys = await API.call('getSystemInfo');
+  }catch(e){}
+  S.selected.clear();
+  rerender();
+}
+
+function toast(msg){
+  const t = document.createElement('div'); t.className='toast'; t.innerHTML = ic('info')+`<span>${esc(msg)}</span>`;
+  $('#toasts').appendChild(t); setTimeout(() => t.remove(), 3200);
+}
+
+/* ======================= Busca ======================= */
+$('#q').addEventListener('input', e => { S.query = e.target.value.trim(); render(); });
+
+/* ======================= Início ======================= */
+async function boot(){
+  try{
+    S.sys = await API.call('getSystemInfo');
+    $('#adminBadge').innerHTML = S.sys.admin ? `${ic('shield')}Modo administrador` : `<span style="color:var(--amber)">Sem privilégios de administrador</span>`;
+    $('#verTxt').textContent = 'Versão ' + S.sys.version;
+    await loadCatalog();
+  }catch(e){
+    $('#content').innerHTML = `<div class="empty">Erro ao carregar: ${esc(e)}</div>`;
+    return;
+  }
+  render();
+  pollLive();
+}
+boot();
+</script>
+</body>
+</html>
